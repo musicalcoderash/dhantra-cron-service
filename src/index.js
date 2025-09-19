@@ -62,20 +62,35 @@ async function executeCronJob(jobConfig) {
   try {
     logger.info(`Executing cron job: ${jobConfig.name} (${executionId})`);
     
-    // Prepare the request payload
-    const payload = {
-      tickers: jobConfig.tickers || [jobConfig.ticker],
-      strategy: jobConfig.strategy || 'Reversal',
-      confidenceThreshold: jobConfig.confidenceThreshold || 0.7,
-      buyAmount: jobConfig.buyAmount || 1000.0,
-      phoneNumbers: jobConfig.phoneNumbers || [jobConfig.phoneNumber],
-      apiKey: process.env.DHANTRA_API_KEY,
-      testMode: jobConfig.testMode || false // Test flag to bypass logic and send test message
-    };
+    // Determine which endpoint to use based on job type
+    let endpoint, payload;
+    
+    if (jobConfig.jobType === 'summary') {
+      // Use position-alert endpoint for summary jobs
+      endpoint = `${process.env.DHANTRA_CORE_API_URL}/api/position-alert/send`;
+      payload = {
+        phoneNumbers: jobConfig.phoneNumbers || [jobConfig.phoneNumber],
+        includeAccountInfo: jobConfig.includeAccountInfo || false,
+        includePositions: jobConfig.includePositions || false,
+        includeOrders: jobConfig.includeOrders || false
+      };
+    } else {
+      // Use external-cron endpoint for execution jobs
+      endpoint = `${process.env.DHANTRA_CORE_API_URL}/api/external-cron/execute`;
+      payload = {
+        tickers: jobConfig.tickers || [jobConfig.ticker],
+        strategy: jobConfig.strategy || 'Reversal',
+        confidenceThreshold: jobConfig.confidenceThreshold || 0.7,
+        buyAmount: jobConfig.buyAmount || 1000.0,
+        phoneNumbers: jobConfig.phoneNumbers || [jobConfig.phoneNumber],
+        apiKey: process.env.DHANTRA_API_KEY,
+        testMode: jobConfig.testMode || false // Test flag to bypass logic and send test message
+      };
+    }
 
-    // Call the Dhantra Core API
+    // Call the appropriate Dhantra Core API endpoint
     const response = await axios.post(
-      `${process.env.DHANTRA_CORE_API_URL}/api/external-cron/execute`,
+      endpoint,
       payload,
       {
         headers: {
