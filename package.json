@@ -1,6 +1,6 @@
 {
   "name": "dhantra-cron-service",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Configurable cron service for Dhantra trading system",
   "main": "src/index.js",
   "scripts": {

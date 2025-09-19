@@ -1,3 +1,4 @@
+// Version 1.0.1 - Updated to use position-alert endpoint for summary jobs
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
