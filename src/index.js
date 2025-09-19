@@ -72,7 +72,8 @@ async function executeCronJob(jobConfig) {
         phoneNumbers: jobConfig.phoneNumbers || [jobConfig.phoneNumber],
         includeAccountInfo: jobConfig.includeAccountInfo || false,
         includePositions: jobConfig.includePositions || false,
-        includeOrders: jobConfig.includeOrders || false
+        includeOrders: jobConfig.includeOrders || false,
+        bypassMarketCheck: true // Always bypass market check for manual execution
       };
     } else {
       // Use external-cron endpoint for execution jobs
