@@ -75,6 +75,7 @@ async function executeCronJob(jobConfig) {
         includeOrders: jobConfig.includeOrders || false,
         bypassMarketCheck: true // Always bypass market check for manual execution
       };
+      logger.info(`Using position-alert endpoint for summary job: ${jobConfig.name}`);
     } else {
       // Use external-cron endpoint for execution jobs
       endpoint = `${process.env.DHANTRA_CORE_API_URL}/api/external-cron/execute`;
