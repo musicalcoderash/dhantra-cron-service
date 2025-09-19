@@ -69,7 +69,8 @@ async function executeCronJob(jobConfig) {
       confidenceThreshold: jobConfig.confidenceThreshold || 0.7,
       buyAmount: jobConfig.buyAmount || 1000.0,
       phoneNumbers: jobConfig.phoneNumbers || [jobConfig.phoneNumber],
-      apiKey: process.env.DHANTRA_API_KEY
+      apiKey: process.env.DHANTRA_API_KEY,
+      testMode: jobConfig.testMode || false // Test flag to bypass logic and send test message
     };
 
     // Call the Dhantra Core API
@@ -134,6 +135,50 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     activeJobs: cronJobs.size
   });
+});
+
+// Test endpoint to send test message
+app.post('/api/test-message', async (req, res) => {
+  try {
+    const { phoneNumbers, message } = req.body;
+    
+    if (!phoneNumbers || phoneNumbers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone numbers are required'
+      });
+    }
+    
+    const testMessage = message || `🧪 TEST MESSAGE: Cron service test at ${new Date().toISOString()}`;
+    
+    // Create a test job config
+    const testJobConfig = {
+      id: 'test-' + Date.now(),
+      name: 'Test Message',
+      tickers: ['TEST'],
+      strategy: 'Test',
+      confidenceThreshold: 0,
+      buyAmount: 0,
+      phoneNumbers: phoneNumbers,
+      testMode: true
+    };
+    
+    // Execute the test job
+    const result = await executeCronJob(testJobConfig);
+    
+    res.json({
+      success: true,
+      message: `Test message sent to ${phoneNumbers.length} recipients`,
+      execution: result
+    });
+    
+  } catch (error) {
+    logger.error(`Error sending test message: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send test message'
+    });
+  }
 });
 
 // Get all cron jobs
