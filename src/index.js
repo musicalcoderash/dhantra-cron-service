@@ -7,6 +7,7 @@ const cron = require('node-cron');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const winston = require('winston');
+const firebaseLogging = require('./firebase-logging');
 require('dotenv').config();
 
 const app = express();
@@ -63,6 +64,18 @@ async function executeCronJob(jobConfig) {
   try {
     logger.info(`Executing cron job: ${jobConfig.name} (${executionId})`);
     
+    // Log cron job start to Firebase
+    await firebaseLogging.logCronJobStart(
+      jobConfig.id,
+      executionId,
+      jobConfig.name,
+      jobConfig.tickers || [jobConfig.ticker],
+      jobConfig.strategy || 'Reversal',
+      jobConfig.confidenceThreshold || 0.7,
+      jobConfig.buyAmount || 1000.0,
+      jobConfig.phoneNumbers || [jobConfig.phoneNumber]
+    );
+    
     // Determine which endpoint to use based on job type
     let endpoint, payload;
     
@@ -106,6 +119,16 @@ async function executeCronJob(jobConfig) {
 
     const executionTime = Date.now() - startTime;
     
+    // Log successful execution to Firebase
+    await firebaseLogging.logCronJobComplete(
+      jobConfig.id,
+      executionId,
+      true,
+      'Cron job completed successfully',
+      `${executionTime}ms`,
+      response.data
+    );
+    
     // Log successful execution
     const executionLog = {
       id: executionId,
@@ -124,6 +147,16 @@ async function executeCronJob(jobConfig) {
     
   } catch (error) {
     const executionTime = Date.now() - startTime;
+    
+    // Log failed execution to Firebase
+    await firebaseLogging.logCronJobComplete(
+      jobConfig.id,
+      executionId,
+      false,
+      `Cron job failed: ${error.message}`,
+      `${executionTime}ms`,
+      { error: error.message }
+    );
     
     // Log failed execution
     const executionLog = {
